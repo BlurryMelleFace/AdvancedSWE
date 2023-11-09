@@ -1,22 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Media;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using CMDSpotifyClient;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq; 
+using System.Net;
+using NAudio.Wave;
 
 namespace CMDSpotifyClient
 {
     class JSONSearchForItem
     {
         public static string JSON { get; set; }
+        public static string TrackID { get; set; }
         public static void ShowData()
         {
-            var SONGS = JsonConvert.DeserializeObject<JSONResponses.Rootobject>(JSON);
+            var deserialized = JsonConvert.DeserializeObject<JSONResponses.SearchForItem.Rootobject>(JSON);
 
-            foreach (var i in SONGS.tracks.items)
+            foreach (var i in deserialized.tracks.items)
             {
+                TrackID = i.id;
                 Console.Clear();
                 Console.WriteLine($"Name Of The Track: {i.name}");
                 TimeSpan duration = TimeSpan.FromMilliseconds(i.duration_ms);
@@ -32,9 +38,38 @@ namespace CMDSpotifyClient
                 }
             }
         }
-        
-    }
 
+    }
+    class JSONGetTrack
+    {
+        public static string JSON { get; set; }
+        public static void ShowData()
+        {
+            var deserialized = JsonConvert.DeserializeObject<JSONResponses.GetTrack.Rootobject>(JSON);
+
+            string audioUrl = deserialized.preview_url;
+
+            try
+            {
+                using (var webStream = new MediaFoundationReader(audioUrl))
+                using (var outputDevice = new WaveOutEvent())
+                {
+                    outputDevice.Init(webStream);
+                    outputDevice.Play();
+
+                    Console.WriteLine("Press any key to stop playback...");
+                    Console.ReadKey();
+
+                    outputDevice.Stop();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+        }
+
+    }
     class SpotifyCredentials
     {
         private static string clientId { get; } = "65030c7ddddc4cbe822c46c4277fe265";
@@ -76,6 +111,8 @@ namespace CMDSpotifyClient
                 if (response.IsSuccessStatusCode)
                 {
                     var responseString = await response.Content.ReadAsStringAsync();
+
+                    JSONGetTrack.JSON = responseString;
                 }
                 else
                 {
@@ -106,7 +143,6 @@ namespace CMDSpotifyClient
         }
 
     }
-
     class Program
     {
         static async Task Main(string[] args)
@@ -116,7 +152,7 @@ namespace CMDSpotifyClient
 
             Console.WriteLine("Type in a Song you would like to Search for:");
             string songName = Console.ReadLine();
-            
+
             await GetInformation.SearchForItem(SpotifyCredentials.accessToken, songName);
             JSONSearchForItem.ShowData();
 
@@ -128,7 +164,8 @@ namespace CMDSpotifyClient
 
             if (userInput == "1")
             {
-
+                await GetInformation.GetTrack(SpotifyCredentials.accessToken, JSONSearchForItem.TrackID);
+                JSONGetTrack.ShowData();
             }
             else if (userInput == "2")
             {
@@ -137,17 +174,17 @@ namespace CMDSpotifyClient
                 songName = Console.ReadLine();
                 await GetInformation.SearchForItem(SpotifyCredentials.accessToken, songName);
                 JSONSearchForItem.ShowData();
-        }
+            }
             else if (userInput == "3")
             {
                 System.Environment.Exit(0);
             }
 
+            Console.WriteLine("\n");
             Console.WriteLine("Press Enter to Exit");
             Console.ReadLine();
 
 
         }
     }
-
 }
