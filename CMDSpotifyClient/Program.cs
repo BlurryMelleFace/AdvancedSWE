@@ -9,6 +9,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq; 
 using System.Net;
 using NAudio.Wave;
+using System.Data;
+using System.Runtime.InteropServices;
+using System.Globalization;
 
 namespace CMDSpotifyClient
 {
@@ -43,7 +46,7 @@ namespace CMDSpotifyClient
     class JSONGetTrack
     {
         public static string JSON { get; set; }
-        public static void ShowData()
+        public static void ShowData() 
         {
             var deserialized = JsonConvert.DeserializeObject<JSONResponses.GetTrack.Rootobject>(JSON);
 
@@ -57,10 +60,11 @@ namespace CMDSpotifyClient
                     outputDevice.Init(webStream);
                     outputDevice.Play();
 
-                    Console.WriteLine("Press any key to stop playback...");
+                    Console.WriteLine("Press any key to stop playback or go back to Track Search");
                     Console.ReadKey();
 
                     outputDevice.Stop();
+
                 }
             }
             catch (Exception ex)
@@ -143,12 +147,42 @@ namespace CMDSpotifyClient
         }
 
     }
-    class Program
-    {
-        static async Task Main(string[] args)
-        {
 
-            await SpotifyCredentials.GetAccessToken();
+    class SpotifyClient
+    {
+        public static async Task Selection()
+        {
+            Console.Clear();
+            Console.WriteLine("Hello and Welchome to the Spotify Client, What do you want to do?");
+            Console.WriteLine("\n");
+            Console.WriteLine("| 1 | Search for a Song");
+            Console.WriteLine("| 2 | View Your Playlist");
+            Console.WriteLine("| 3 | Quit this application");
+
+            var userInputSelection = Console.ReadLine();  
+
+            if (userInputSelection == "1")
+            {
+                await Choise1();
+            }
+            else if (userInputSelection == "2")
+            {
+                Console.Clear();
+
+            }
+            else if (userInputSelection == "3")
+            {
+                Console.Clear();
+
+
+             
+            }
+
+        }
+
+        public static async Task Choise1()
+        {
+            Console.Clear();
 
             Console.WriteLine("Type in a Song you would like to Search for:");
             string songName = Console.ReadLine();
@@ -157,33 +191,42 @@ namespace CMDSpotifyClient
             JSONSearchForItem.ShowData();
 
             Console.WriteLine("\n");
-            Console.WriteLine("| 1 | You want to get more Info of the Track");
-            Console.WriteLine("| 2 | You want to search another track ");
-            Console.WriteLine("| 3 | You Want to quit this application");
+            Console.WriteLine("| 1 | Playback");
+            Console.WriteLine("| 2 | Search another track");
+            Console.WriteLine("| 3 | Go Back to Selection");
             string userInput = Console.ReadLine();
 
             if (userInput == "1")
             {
                 await GetInformation.GetTrack(SpotifyCredentials.accessToken, JSONSearchForItem.TrackID);
                 JSONGetTrack.ShowData();
+
+                await SpotifyClient.Choise1();
+
             }
             else if (userInput == "2")
             {
-                Console.Clear();
-                Console.WriteLine("Type in a Song you would like to Search for:");
-                songName = Console.ReadLine();
-                await GetInformation.SearchForItem(SpotifyCredentials.accessToken, songName);
-                JSONSearchForItem.ShowData();
+                await Choise1();
             }
             else if (userInput == "3")
             {
-                System.Environment.Exit(0);
+
+
+                await SpotifyClient.Selection();
             }
 
-            Console.WriteLine("\n");
-            Console.WriteLine("Press Enter to Exit");
-            Console.ReadLine();
 
+        }
+    }
+
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+
+            await SpotifyCredentials.GetAccessToken();
+
+            await SpotifyClient.Selection();
 
         }
     }
