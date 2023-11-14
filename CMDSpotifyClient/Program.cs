@@ -15,7 +15,7 @@ using System.Globalization;
 
 namespace CMDSpotifyClient
 {
-    class JSONSearchForItem
+    class JSONTrackID
     {
         public static string JSON { get; set; }
         public static string TrackID { get; set; }
@@ -27,33 +27,48 @@ namespace CMDSpotifyClient
             {
                 TrackID = i.id;
                 Console.Clear();
-                Console.WriteLine($"Name Of The Track: {i.name}");
+                Console.WriteLine($"Name Of The Track:---------------------{i.name}");
                 TimeSpan duration = TimeSpan.FromMilliseconds(i.duration_ms);
                 string formattedDuration = $"{duration.Minutes:D2}:{duration.Seconds:D2}";
-                Console.WriteLine($"Duration: {formattedDuration}");
-                Console.WriteLine($"Explicit: {i._explicit}");
-                Console.WriteLine($"Name of The Corresponding Album: {i.album.name}");
-                Console.WriteLine($"Album Release Date: {i.album.release_date}");
-
+                Console.WriteLine($"Duration:------------------------------{formattedDuration}");
+                Console.WriteLine($"Explicit:------------------------------{i._explicit}");
+                Console.WriteLine($"Name of The Corresponding Album:-------{i.album.name}");
+                Console.WriteLine($"Album Release Date:--------------------{i.album.release_date}");
+                
                 foreach (var ii in i.album.artists)
                 {
-                    Console.WriteLine($"Name Of Artist: {ii.name}");
+                    Console.WriteLine($"Name Of Artist:------------------------{ii.name}");
                 }
             }
         }
 
     }
-    class JSONGetTrack
+    class JSONGenre
+    {
+
+    }
+
+    class JSONArtist
+    {
+
+    }
+    class JSONPlayTrack
     {
         public static string JSON { get; set; }
-        public static void ShowData() 
+        public static void PlayTrack() 
         {
             var deserialized = JsonConvert.DeserializeObject<JSONResponses.GetTrack.Rootobject>(JSON);
 
             string audioUrl = deserialized.preview_url;
-
             try
             {
+                if (audioUrl == null)
+                {
+                    
+                     Console.WriteLine("Audio URL is null.");
+                     Console.ReadLine();
+                }
+
                 using (var webStream = new MediaFoundationReader(audioUrl))
                 using (var outputDevice = new WaveOutEvent())
                 {
@@ -116,7 +131,7 @@ namespace CMDSpotifyClient
                 {
                     var responseString = await response.Content.ReadAsStringAsync();
 
-                    JSONGetTrack.JSON = responseString;
+                    JSONPlayTrack.JSON = responseString;
                 }
                 else
                 {
@@ -136,7 +151,7 @@ namespace CMDSpotifyClient
                 {
                     var responseString = await response.Content.ReadAsStringAsync();
 
-                    JSONSearchForItem.JSON = responseString;
+                    JSONTrackID.JSON = responseString;
 
                 }
                 else
@@ -163,7 +178,10 @@ namespace CMDSpotifyClient
 
             if (userInputSelection == "1")
             {
-                await Choise1();
+                Console.Clear();
+                Console.WriteLine("Type in a Song you would like to Search for:");
+                string songName = Console.ReadLine();
+                await SearchTrack(songName);
             }
             else if (userInputSelection == "2")
             {
@@ -173,22 +191,16 @@ namespace CMDSpotifyClient
             else if (userInputSelection == "3")
             {
                 Console.Clear();
-
-
-             
             }
 
         }
 
-        public static async Task Choise1()
+        public static async Task SearchTrack(string songName)
         {
             Console.Clear();
 
-            Console.WriteLine("Type in a Song you would like to Search for:");
-            string songName = Console.ReadLine();
-
             await GetInformation.SearchForItem(SpotifyCredentials.accessToken, songName);
-            JSONSearchForItem.ShowData();
+            JSONTrackID.ShowData();
 
             Console.WriteLine("\n");
             Console.WriteLine("| 1 | Playback");
@@ -198,20 +210,21 @@ namespace CMDSpotifyClient
 
             if (userInput == "1")
             {
-                await GetInformation.GetTrack(SpotifyCredentials.accessToken, JSONSearchForItem.TrackID);
-                JSONGetTrack.ShowData();
-
-                await SpotifyClient.Choise1();
+                await GetInformation.GetTrack(SpotifyCredentials.accessToken, JSONTrackID.TrackID);
+                JSONPlayTrack.PlayTrack();
+                Console.ReadLine();
+                await SpotifyClient.SearchTrack(songName);
 
             }
             else if (userInput == "2")
             {
-                await Choise1();
+                Console.Clear() ;
+                Console.WriteLine("Type in a new Song you would like to Search for:");
+                var newSongName = Console.ReadLine();
+                await SearchTrack(newSongName);
             }
             else if (userInput == "3")
             {
-
-
                 await SpotifyClient.Selection();
             }
 
