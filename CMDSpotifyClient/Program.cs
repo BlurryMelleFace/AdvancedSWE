@@ -28,12 +28,11 @@ namespace CMDSpotifyClient
         public static string AlbumID { get; set; }
         public static string ArtistID { get; set; }
 
-        public static List<string> artistSring = new List<string>();
-        public static string joinedArtists { get; set; }
+        public static List<string> artistSringID = new List<string>();
         public static void DataSearchTrack()
         {
             var deserialized = JsonConvert.DeserializeObject<JSONResponses.SearchForItem.Rootobject>(JSON);
-            artistSring.Clear();
+            artistSringID.Clear();
             foreach (var i in deserialized.tracks.items)
             {
                 TrackID = i.id;
@@ -44,10 +43,9 @@ namespace CMDSpotifyClient
                 {
                     Console.WriteLine($"Name Of Artist {count}:----------------------{ii.name}");
                     count++;
-                    artistSring.Add(ii.id);
+                    artistSringID.Add(ii.id);
                 }
                 AlbumID = i.album.id;
-                joinedArtists = string.Join(",", artistSring);
                 TimeSpan duration = TimeSpan.FromMilliseconds(i.duration_ms);
                 string formattedDuration = $"{duration.Minutes:D2}:{duration.Seconds:D2}";
                 Console.WriteLine($"Duration:------------------------------{formattedDuration}");
@@ -82,8 +80,9 @@ namespace CMDSpotifyClient
     {
         public static string JSON { get; set; }
 
-        public static List<string> albumListString = new List<string>();
-        public static List<string> singlesListString = new List<string>();
+        public static List<string> albumListStringID = new List<string>();
+        public static List<string> singlesListStringID = new List<string>();
+        public static List<string> relatedArtistsListStringID = new List<string>();
         public static void DataArtist()
         {
             var deserialized = JsonConvert.DeserializeObject<JSONResponses.GetArtists.Rootobject>(JSON);
@@ -108,7 +107,7 @@ namespace CMDSpotifyClient
         public static void DataArtistSingles()
         {
             var deserialized = JsonConvert.DeserializeObject<JSONResponses.GetArtistAlbums.Rootobject>(JSON);
-            singlesListString.Clear();
+            singlesListStringID.Clear();
             Console.Clear();
             var count = 1;
             foreach (var i in deserialized.items)
@@ -116,7 +115,7 @@ namespace CMDSpotifyClient
                 if (i.total_tracks == 1)
                 {
                     Console.WriteLine($"Album {count}:---------------------{i.release_date.Normalize()} | {i.name}");
-                    singlesListString.Add(i.id);
+                    singlesListStringID.Add(i.id);
                     count++;
                 }
             }
@@ -124,7 +123,7 @@ namespace CMDSpotifyClient
         public static void DataArtistAlbums()
         {
             var deserialized = JsonConvert.DeserializeObject<JSONResponses.GetArtistAlbums.Rootobject>(JSON);
-            albumListString.Clear();
+            albumListStringID.Clear();
             Console.Clear();
             var count = 1;
             foreach (var i in deserialized.items)
@@ -132,11 +131,28 @@ namespace CMDSpotifyClient
                 if (i.total_tracks > 1)
                 {
                     Console.WriteLine($"Album {count}:---------------------{i.release_date.Normalize()} | {i.name}");
-                    albumListString.Add(i.id);
+                    albumListStringID.Add(i.id);
                     count++;
                 }
             }
         }
+        public static void DataArtistRelatedArtists()
+        {
+            var deserialized = JsonConvert.DeserializeObject<JSONResponses.GetArtistRelatedArtists.Rootobject>(JSON);
+            relatedArtistsListStringID.Clear();
+            Console.Clear();
+            Console.WriteLine("Related Artists:");
+            Console.WriteLine("\n");
+            var count = 1;
+            foreach (var i in deserialized.artists)
+            {
+                    Console.WriteLine($"Track {count}:---------------------{i.name}");
+                    relatedArtistsListStringID.Add(i.id);
+                    count++;
+
+            }
+        }
+
 
     }
     class JSONAlbum
@@ -145,6 +161,7 @@ namespace CMDSpotifyClient
 
         public static List<string> trackListString = new List<string>();
         public static string AlbumName { get; set; }
+        public static string LastArtistName { get; set; }
 
         public static List<string> artistIDList = new List<string>();
         public static void DataAlbum()
@@ -162,6 +179,7 @@ namespace CMDSpotifyClient
             {
                 Console.WriteLine($"Album Artist {count}:--------------{i.name}");
                 artistIDList.Add(i.id);
+                LastArtistName = i.name;
                 count++;
             }
             Console.WriteLine("\n");
@@ -438,6 +456,25 @@ namespace CMDSpotifyClient
                 }
             }
         }
+        public static async Task GetArtistRelatedArtists(string accessToken, string artistID)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+                var response = await client.GetAsync($"https://api.spotify.com/v1/artists/{artistID}/related-artists");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseString = await response.Content.ReadAsStringAsync();
+                    JSONArtist.JSON = responseString;
+                }
+                else
+                {
+                    Console.WriteLine("Error: " + response.StatusCode);
+                }
+            }
+        }
+
 
     }
     class SpotifyClient
@@ -525,7 +562,15 @@ namespace CMDSpotifyClient
                 }
                 else if (userInput == "3")
                 {
-                    await ArtistMenu(JSONSearchInformation.joinedArtists);
+                    int index;
+
+                    do
+                    {
+                        Console.WriteLine("Type in the Artist Index");
+
+                    } while (!int.TryParse(Console.ReadLine(), out index) || index < 1 || index > JSONSearchInformation.artistSringID.Count);
+
+                    await ArtistMenu(JSONSearchInformation.artistSringID[index - 1]);
                     await SearchTrackMenu(trackName);
                     break;
                 }
@@ -579,10 +624,11 @@ namespace CMDSpotifyClient
 
                     Console.WriteLine("\n");
                     Console.WriteLine("| 1 | Go Back");
-                    Console.WriteLine("| 2 | Search released Albums from the Artist (no Singles)");
-                    Console.WriteLine("| 3 | Search released Albums from the Artist (Singles)");
+                    Console.WriteLine("| 2 | Search released Albums (no Singles) from the Artist");
+                    Console.WriteLine("| 3 | Search released Albums (Singles) from the Artist");
+                    Console.WriteLine("| 4 | Search related Artists");
 
-            while (true)
+                while (true)
                     {
                         string userInput = Console.ReadLine();
 
@@ -601,7 +647,13 @@ namespace CMDSpotifyClient
                             await GetArtistSingles(artistID);
                             await ArtistMenu(artistID);
                             break;
-                         }
+                        }
+                        if (userInput == "4")
+                        {
+                            await GetArtistRelatedArtists(artistID);
+                            await ArtistMenu(artistID);
+                            break;
+                        }
                         else
                         {
                             Console.WriteLine("Invalid input Please enter a number 1.");
@@ -639,22 +691,22 @@ namespace CMDSpotifyClient
                             } while (!int.TryParse(Console.ReadLine(), out index) || index < 1 || index > JSONAlbum.trackListString.Count);
 
                             var indexSongName = JSONAlbum.trackListString[index - 1];
-                            var songName = $"{JSONAlbum.artistIDList[0]} {JSONAlbum.AlbumName} {indexSongName}";
+                            var songName = $"{JSONAlbum.LastArtistName} {JSONAlbum.AlbumName} {indexSongName}";
                             await SearchTrackMenu(songName);
                             await AlbumMenu(albumID);
                             break;
                         }
                         else if (userInput == "3")
                         {
-                            int index;
+                            int index2;
 
                             do
                             {
                                 Console.WriteLine("Type in the Artist Index");
 
-                            } while (!int.TryParse(Console.ReadLine(), out index) || index < 1 || index > JSONAlbum.artistIDList.Count);
+                            } while (!int.TryParse(Console.ReadLine(), out index2) || index2 < 1 || index2 > JSONAlbum.artistIDList.Count);
 
-                            await ArtistMenu(JSONAlbum.artistIDList[index - 1]);
+                            await ArtistMenu(JSONAlbum.artistIDList[index2 - 1]);
                             await AlbumMenu(albumID);
                             break;
                             
@@ -718,9 +770,9 @@ namespace CMDSpotifyClient
                             {
                                 Console.WriteLine("Type in the Album Index");
 
-                            } while (!int.TryParse(Console.ReadLine(), out index) || index < 1 || index > JSONArtist.albumListString.Count);
+                            } while (!int.TryParse(Console.ReadLine(), out index) || index < 1 || index > JSONArtist.albumListStringID.Count);
 
-                            await AlbumMenu(JSONArtist.albumListString[index - 1]);
+                            await AlbumMenu(JSONArtist.albumListStringID[index - 1]);
                             await GetArtistAlbums(artistID);
                             break;
                         }
@@ -758,9 +810,9 @@ namespace CMDSpotifyClient
                             {
                                 Console.WriteLine("Type in the Single Index");
 
-                            } while (!int.TryParse(Console.ReadLine(), out index) || index < 1 || index > JSONArtist.singlesListString.Count);
+                            } while (!int.TryParse(Console.ReadLine(), out index) || index < 1 || index > JSONArtist.singlesListStringID.Count);
 
-                            await AlbumMenu(JSONArtist.singlesListString[index - 1]);
+                            await AlbumMenu(JSONArtist.singlesListStringID[index - 1]);
                             await GetArtistAlbums(artistID);
                             break;
                         }
@@ -771,6 +823,48 @@ namespace CMDSpotifyClient
                         }
                     }
                 }
+                public static async Task GetArtistRelatedArtists(string artistID)
+                {
+                    Console.Clear();
+
+                    await GetInformationFromAPI.GetArtistRelatedArtists(SpotifyCredentials.accessToken, artistID);
+                    JSONArtist.DataArtistRelatedArtists();
+
+                    Console.WriteLine("\n");
+                    Console.WriteLine("| 1 | Go Back");
+                    Console.WriteLine("| 2 | Visit a Specific Artist");
+                    while (true)
+                    {
+                        string userInput = Console.ReadLine();
+
+                        if (userInput == "1")
+                        {
+                            break;
+                        }
+
+                        else if (userInput == "2")
+                        {
+                            int index;
+
+                            do
+                            {
+                                Console.WriteLine("Type in the Single Index");
+
+                            } while (!int.TryParse(Console.ReadLine(), out index) || index < 1 || index > JSONArtist.relatedArtistsListStringID.Count);
+
+                            await ArtistMenu(JSONArtist.relatedArtistsListStringID[index - 1]);
+                            await GetArtistRelatedArtists(artistID);
+                            break;
+                        }
+
+                        else
+                        {
+                            Console.WriteLine("Invalid input. Please enter a Number between 1 and 2");
+                        }
+                    }
+                }
+
+
 
     }
     class Program
