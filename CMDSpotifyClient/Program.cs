@@ -139,7 +139,7 @@ namespace CMDSpotifyClient
         }
 
     }
-    class JSONPlayTrack
+    class JSONTrack
     {
         public static string JSON { get; set; }
         public static void DataPlayTrack()
@@ -173,6 +173,26 @@ namespace CMDSpotifyClient
             {
                 Console.WriteLine($"An error occurred: {ex.Message}");
             }
+        }
+        public static void DataAdditionalTrackInfo()
+        {
+            var deserialized = JsonConvert.DeserializeObject<JSONResponses.GetAdditionalTrackInfo.Rootobject>(JSON);
+
+            Console.Clear();
+            Console.WriteLine($"Track ID:------------------------------{deserialized.id}");
+            Console.WriteLine($"Track Key:-----------------------------{deserialized.key}");
+            Console.WriteLine($"Track Tempo:---------------------------{deserialized.tempo} BPM");
+            Console.WriteLine($"Track Instrumentalness:----------------{deserialized.instrumentalness}");
+            Console.WriteLine($"Track Acousticness:--------------------{deserialized.acousticness}");
+            Console.WriteLine($"Track Speechiness:---------------------{deserialized.speechiness}");
+            Console.WriteLine($"Track Danceability:--------------------{deserialized.danceability}");
+            Console.WriteLine($"Track Energy:--------------------------{deserialized.energy}");
+            Console.WriteLine($"Track Liveness:------------------------{deserialized.liveness}");
+            Console.WriteLine($"Track Loudness:------------------------|{deserialized.loudness} dB");
+            Console.WriteLine($"Track Time Signature:------------------{deserialized.time_signature}");
+            Console.WriteLine($"Track Valence:-------------------------{deserialized.valence}");
+           
+
         }
 
     }
@@ -267,6 +287,26 @@ namespace CMDSpotifyClient
             }
         }
 
+        public static async Task GetAdditionalTrackInfo(string accessToken, string trackId)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+                var response = await client.GetAsync($"https://api.spotify.com/v1/audio-features/{trackId}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseString = await response.Content.ReadAsStringAsync();
+
+                    JSONTrack.JSON = responseString;
+                }
+                else
+                {
+                    Console.WriteLine("Error: " + response.StatusCode);
+                }
+            }
+
+        }
         public static async Task GetTrack(string accessToken, string trackId)
         {
             using (HttpClient client = new HttpClient())
@@ -278,7 +318,7 @@ namespace CMDSpotifyClient
                 {
                     var responseString = await response.Content.ReadAsStringAsync();
 
-                    JSONPlayTrack.JSON = responseString;
+                    JSONTrack.JSON = responseString;
                 }
                 else
                 {
@@ -287,12 +327,12 @@ namespace CMDSpotifyClient
             }
 
         }
-        public static async Task GetArtists(string accessToken, string artistString)
+        public static async Task GetArtists(string accessToken, string artistID)
         {
             using (HttpClient client = new HttpClient())
             {
                 client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-                var response = await client.GetAsync($"https://api.spotify.com/v1/artists?ids={artistString}");
+                var response = await client.GetAsync($"https://api.spotify.com/v1/artists?ids={artistID}");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -306,12 +346,12 @@ namespace CMDSpotifyClient
             }
 
         }
-        public static async Task GetAlbum(string accessToken, string albumString)
+        public static async Task GetAlbum(string accessToken, string albumID)
         {
             using (HttpClient client = new HttpClient())
             {
                 client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-                var response = await client.GetAsync($"https://api.spotify.com/v1/albums/{albumString}");
+                var response = await client.GetAsync($"https://api.spotify.com/v1/albums/{albumID}");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -408,6 +448,7 @@ namespace CMDSpotifyClient
             Console.WriteLine("| 3 | Search the Artist(s)");
             Console.WriteLine("| 4 | Search another track");
             Console.WriteLine("| 5 | Search for the Album");
+            Console.WriteLine("| 6 | Get more Comprehensive Info on the Track");
 
 
             while (true)
@@ -421,7 +462,7 @@ namespace CMDSpotifyClient
                 else if (userInput == "2")
                 {
                     await GetInformationFromAPI.GetTrack(SpotifyCredentials.accessToken, JSONSearchInformation.TrackID);
-                    JSONPlayTrack.DataPlayTrack();
+                    JSONTrack.DataPlayTrack();
                     await SearchTrackMenu(trackName);
                     break;
                 }
@@ -446,6 +487,12 @@ namespace CMDSpotifyClient
                     await SearchTrackMenu(trackName);
                     break;
                 }
+                else if (userInput == "6")
+                {
+                    await AdditionalTrackInfo(JSONSearchInformation.TrackID);
+                    await SearchTrackMenu(trackName);
+                    break;
+                }
                 else
                 {
                     Console.WriteLine("Invalid input. Please enter a number between 1 and 5.");
@@ -466,73 +513,98 @@ namespace CMDSpotifyClient
                 JSONSearchInformation.DataSearchArtist();
                 await ArtistMenu(JSONSearchInformation.ArtistID);
             }
-                public static async Task ArtistMenu(string artistString)
-        {
-            Console.Clear();
-
-            await GetInformationFromAPI.GetArtists(SpotifyCredentials.accessToken, artistString);
-            JSONArtist.DataArtist();
-
-            Console.WriteLine("\n");
-            Console.WriteLine("| 1 | Go Back");
-
-            while (true)
-            {
-                string userInput = Console.ReadLine();
-
-                if (userInput == "1")
+                public static async Task ArtistMenu(string artistID)
                 {
-                    break;
-                }
-                else
-                {
-                    Console.WriteLine("Invalid input Please enter a number 1.");
-                }
-            }
-        }
-                public static async Task AlbumMenu(string albumName)
-        {
-            Console.Clear();
+                    Console.Clear();
 
-            await GetInformationFromAPI.GetAlbum(SpotifyCredentials.accessToken, albumName);
-            JSONAlbum.DataAlbum();
+                    await GetInformationFromAPI.GetArtists(SpotifyCredentials.accessToken, artistID);
+                    JSONArtist.DataArtist();
 
-            Console.WriteLine("\n");
-            Console.WriteLine("| 1 | Go Back");
-            Console.WriteLine("| 2 | Visit a Song in the Album");
-            while (true)
-            {
-                string userInput = Console.ReadLine();
+                    Console.WriteLine("\n");
+                    Console.WriteLine("| 1 | Go Back");
 
-                if (userInput == "1")
-                {
-                    break;
-                }
-
-                else if (userInput == "2")
-                {
-                    int index;
-
-                    do
+                    while (true)
                     {
-                        Console.WriteLine("Type in the Song Index");
+                        string userInput = Console.ReadLine();
 
-                    } while (!int.TryParse(Console.ReadLine(), out index) || index < 1 || index > JSONAlbum.trackListString.Count);
-
-                    var indexSongName = JSONAlbum.trackListString[index - 1];
-                    var songName = $"{JSONAlbum.Artist} {JSONAlbum.AlbumName} {indexSongName}";
-
-                    await SearchTrackMenu(songName);
-                    await AlbumMenu(albumName);
-                    break;
+                        if (userInput == "1")
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid input Please enter a number 1.");
+                        }
+                    }
                 }
-
-                else
+                public static async Task AlbumMenu(string albumID)
                 {
-                    Console.WriteLine("Invalid input. Please enter a Number between 1 and 2");
+                    Console.Clear();
+
+                    await GetInformationFromAPI.GetAlbum(SpotifyCredentials.accessToken, albumID);
+                    JSONAlbum.DataAlbum();
+
+                    Console.WriteLine("\n");
+                    Console.WriteLine("| 1 | Go Back");
+                    Console.WriteLine("| 2 | Visit a Song in the Album");
+                    while (true)
+                    {
+                        string userInput = Console.ReadLine();
+
+                        if (userInput == "1")
+                        {
+                            break;
+                        }
+
+                        else if (userInput == "2")
+                        {
+                            int index;
+
+                            do
+                            {
+                                Console.WriteLine("Type in the Song Index");
+
+                            } while (!int.TryParse(Console.ReadLine(), out index) || index < 1 || index > JSONAlbum.trackListString.Count);
+
+                            var indexSongName = JSONAlbum.trackListString[index - 1];
+                            var songName = $"{JSONAlbum.Artist} {JSONAlbum.AlbumName} {indexSongName}";
+
+                            await SearchTrackMenu(songName);
+                            await AlbumMenu(albumID);
+                            break;
+                        }
+
+                        else
+                        {
+                            Console.WriteLine("Invalid input. Please enter a Number between 1 and 2");
+                        }
+                    }
                 }
-            }
-        }
+                public static async Task AdditionalTrackInfo(string trackID)
+                {
+                    Console.Clear();
+
+                    await GetInformationFromAPI.GetAdditionalTrackInfo(SpotifyCredentials.accessToken, trackID);
+                    JSONTrack.DataAdditionalTrackInfo();
+
+                    Console.WriteLine("\n");
+                    Console.WriteLine("| 1 | Go Back");
+                   
+                    while (true)
+                    {
+                        string userInput = Console.ReadLine();
+
+                        if (userInput == "1")
+                        {
+                            break;
+                        }
+
+                        else
+                        {
+                            Console.WriteLine("Invalid input. Please enter 1");
+                        }
+                    }
+                }
     }
     class Program
     {   
