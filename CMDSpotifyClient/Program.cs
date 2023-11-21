@@ -37,7 +37,6 @@ namespace CMDSpotifyClient
             var deserialized = JsonConvert.DeserializeObject<JSONResponses.GetPlaylist.Rootobject>(JSON);
             tracksPlalyistListStringID.Clear();
             Console.Clear();
-            Console.WriteLine($"Tacks in the Playlist: {deserialized.name}");
             Console.WriteLine("\n");
             var count = 1;
             foreach (var i in deserialized.tracks.items)
@@ -46,8 +45,9 @@ namespace CMDSpotifyClient
                 tracksPlalyistListStringID.Add(i.track.name);
                 count++;
             }
+            Console.WriteLine("\n");
+            Console.WriteLine($"Tacks in the Playlist: {deserialized.name}");
         }
-
     }
     class JSONSearchInformation
     {
@@ -110,10 +110,11 @@ namespace CMDSpotifyClient
         public static List<string> albumListStringID = new List<string>();
         public static List<string> singlesListStringID = new List<string>();
         public static List<string> relatedArtistsListStringID = new List<string>();
+        public static List<string> genresListStringID = new List<string>();
         public static void DataArtist()
         {
             var deserialized = JsonConvert.DeserializeObject<JSONResponses.GetArtists.Rootobject>(JSON);
-
+            genresListStringID.Clear();
             Console.Clear();
             foreach (var i in deserialized.artists)
             {
@@ -126,6 +127,7 @@ namespace CMDSpotifyClient
                 foreach (var item in i.genres)
                 {
                     Console.WriteLine($"Genre {count}:---------------------{item}");
+                    genresListStringID.Add(item);
                     count++;
                 }
                 Console.WriteLine("\n");
@@ -699,8 +701,9 @@ namespace CMDSpotifyClient
                         Console.WriteLine("| 2 | Search released Albums (no Singles) from the Artist");
                         Console.WriteLine("| 3 | Search released Albums (Singles) from the Artist");
                         Console.WriteLine("| 4 | Search related Artists");
+                        Console.WriteLine("| 5 | Search Songs Of Listed Genres");
 
-                    while (true)
+                        while (true)
                         {
                             string userInput = Console.ReadLine();
 
@@ -723,6 +726,20 @@ namespace CMDSpotifyClient
                             if (userInput == "4")
                             {
                                 await GetArtistRelatedArtists(artistID);
+                                await ArtistMenu(artistID);
+                                break;
+                            }
+                            if (userInput == "5")
+                            {
+                                int index;
+                                
+                                do
+                                {
+                                    Console.WriteLine("Type in the Genre Index");
+
+                                } while (!int.TryParse(Console.ReadLine(), out index) || index < 1 || index > JSONArtist.genresListStringID.Count);
+
+                                await SearchGenrePlaylist(JSONArtist.genresListStringID[index-1]);
                                 await ArtistMenu(artistID);
                                 break;
                             }
