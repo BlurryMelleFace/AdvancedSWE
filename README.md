@@ -37,9 +37,6 @@ Welcome to Moritz's Spotify Client! This C# console application allows you to in
 - **Sub-Menus**
   - Follow on-screen prompts to input search queries and explore related information.
 
-## Important Note
-- **Valid Input**
-  - Ensure to input valid numbers as per the provided options to avoid errors.
 
 ## Dependencies
 - **Async Operations**
@@ -48,10 +45,8 @@ Welcome to Moritz's Spotify Client! This C# console application allows you to in
 ## Future Improvements
 - **Enhanced Error Handling**
   - Implement more robust error handling mechanisms.
-- **Additional Features**
-  - Consider adding more features based on user feedback and Spotify API capabilities.
+
 
 ## Credits
-- **Developer:** Moritz (Replace with your name)
+- **Developer:** Moritz 
 
-Feel free to explore, contribute, and provide feedback to enhance the functionality and user experience of this Spotify Client application!
