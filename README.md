@@ -31,14 +31,6 @@ Welcome to Moritz's Spotify Client! This C# console application allows you to in
 - **Clear Console Display**
   - The console display is designed for easy readability and interaction.
 
-## Getting Started
-1. **Obtain Spotify API Credentials**
-   - Ensure you have the necessary Spotify API credentials.
-2. **Set Up Credentials in Code**
-   - Set your Spotify API credentials in the `SpotifyCredentials.cs` file.
-3. **Run the Application**
-   - Execute the `Main` method in the `Program.cs` file to start the application.
-
 ## Usage
 - **Main Menu**
   - Choose options (1-5) to navigate through different search functionalities.
